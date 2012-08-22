@@ -127,11 +127,11 @@ function endSymbol(meta)
 		var animationData = DetermineAnimationData();
 		var proto = symbolName + "_p";
 		
-		s += symbolName + " = function() {\n";
+		s += "\nvar "+symbolName + " = function() {\n";
 		s += "\tthis.initialize();\n"
 		s += "}\n";
 
-		s += symbolName + "._SpriteSheet = new SpriteSheet({images: [\"" + imageDirectory + meta.image + "\"], "
+		s += symbolName + "._SpriteSheet = new SpriteSheet({images: [spritesheetPath], "
 		if (animationData != null && animationData.length != 0)
 		{
 			s += "frames: [" + frameData + "], ";
@@ -166,7 +166,10 @@ function beginExport(meta)
 	startFrameNumber = 0;
 	globalMeta = meta;
 
-	return 	"if (!window."+libObjName+") { window."+libObjName+" = {}; }\n(function() {\n";
+	var str = "if (!window."+libObjName+") { window."+libObjName+" = {}; }\n(function() {\n";
+	str += "var spritesheetPath = \""+imageDirectory+meta.image+"\";\n";	
+
+	return 	str;
 }
 
 function frameExport(frame)
