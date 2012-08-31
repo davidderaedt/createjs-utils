@@ -131,7 +131,7 @@ function endSymbol(meta)
 		s += "\tthis.initialize();\n"
 		s += "}\n";
 
-		s += symbolName + "._SpriteSheet = new SpriteSheet({images: [spritesheetPath], "
+		s += symbolName + "._SpriteSheet = new createjs.SpriteSheet({images: [spritesheetPath], "
 		if (animationData != null && animationData.length != 0)
 		{
 			s += "frames: [" + frameData + "], ";
@@ -142,7 +142,7 @@ function endSymbol(meta)
 			s += "frames: [" + frameData + "]});\n";
 		}
 		
-		s += "var " + proto + " = " + symbolName + ".prototype = new BitmapAnimation();\n";
+		s += "var " + proto + " = " + symbolName + ".prototype = new createjs.BitmapAnimation();\n";
 		s += "" + proto + ".BitmapAnimation_initialize = " + proto + ".initialize;\n";
 		s += "" + proto + ".initialize = function() {\n"
 		s += "\tthis.BitmapAnimation_initialize(" + symbolName + "._SpriteSheet);\n";
