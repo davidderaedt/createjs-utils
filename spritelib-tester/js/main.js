@@ -5,7 +5,7 @@
 $(function () {
 	'use strict';
 
-    var stage = new Stage($("#mainCanvas")[0]);
+    var stage = new createjs.Stage($("#mainCanvas")[0]);
     var anims = [];
     var currentClass;
     var currentSprite;
@@ -13,8 +13,8 @@ $(function () {
     var classList = [];
 
 
-    Ticker.setFPS(40);
-    Ticker.addListener(function () {
+    createjs.Ticker.setFPS(40);
+    createjs.Ticker.addListener(function () {
     	stage.update();
     });     
 
@@ -44,7 +44,8 @@ $(function () {
 
     function setAnim(pName) {
     	currentAnim = pName;
-    	currentSprite[pName].call(currentSprite);
+    	//currentSprite[pName].call(currentSprite);
+        currentSprite.gotoAndPlay(pName);
     }
 
 

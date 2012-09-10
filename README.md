@@ -23,4 +23,8 @@ For use with `easeljs2` plugin formated sprite libraries, this page loads your a
 
 Simply export the JS and PNG files in the "sprites" folder (unless you changed it) and edit index.html to update the js file according to the name of the one you generated.
 
+**Photoshop extension**
+
+Work in progress. Photoshop script to output an EaselJS compliant spritesheet.
+
 
