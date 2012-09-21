@@ -5,8 +5,8 @@ var imageDirectory="sprites/";
 // Whether or not you want to expose animations as functions
 var useHelperFunctions = true;
 // The global object in which to store sprite classes. 
-// e.g. window.lib.DarkKnight, where DarkKnight is your MovieClip
-var libObjName = "lib";
+// e.g. window.myGame.DarkKnight, where DarkKnight is your MovieClip
+var libObjName = "myGame";
 
 /*End of options*/
 
@@ -152,7 +152,7 @@ function endSymbol(meta)
 		if (helperFunctions != null)
 			s += helperFunctions;
 		
-		s += libObjName+"." + symbolName + " = " + symbolName + ";\n";
+		s += "scope." + symbolName + " = " + symbolName + ";\n";
 
 		// cleanup
 		initializeVars();
@@ -166,7 +166,7 @@ function beginExport(meta)
 	startFrameNumber = 0;
 	globalMeta = meta;
 
-	var str = "if (!window."+libObjName+") { window."+libObjName+" = {}; }\n(function() {\n";
+	var str = "if (!window."+libObjName+") { window."+libObjName+" = {}; }\n(function(scope) {\n";
 	str += "var spritesheetPath = \""+imageDirectory+meta.image+"\";\n";	
 
 	return 	str;
@@ -207,7 +207,7 @@ function endExport(meta)
 	
 	globalMeta = null;
 	
-	s += "}());\n\n";
+	s += "}(window."+libObjName+"));\n\n";
 
 	return s;
 }

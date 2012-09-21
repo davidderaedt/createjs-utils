@@ -5,24 +5,31 @@
 $(function () {
 	'use strict';
 
-    var stage = new createjs.Stage($("#mainCanvas")[0]);
     var anims = [];
     var currentClass;
     var currentSprite;
     var currentAnim;
     var classList = [];
 
-
+    var stage = new createjs.Stage($("#mainCanvas")[0]);
     createjs.Ticker.setFPS(40);
     createjs.Ticker.addListener(function () {
     	stage.update();
     });     
 
+    var lib = myGame;
 
     for (var key in lib) {
     	classList.push(lib[key]);
     	$("#classSelector").append('<option value="'+key+'">'+key+'</option>');
     }
+
+    $("body").keydown(function (evt){
+        var n = Number(String.fromCharCode(evt.keyCode)) - 1;
+        if( n >= 0 && n < anims.length - 1 ) {
+            setAnim(anims[n]);
+        }
+    });
 
 
     function setClass(pClass) {
@@ -36,7 +43,9 @@ $(function () {
 
 		$("#animSelector").html("");
        	for (var i = 0 ; i < anims.length ; i++) {
-    		$("#animSelector").append('<option value="'+anims[i]+'">'+anims[i]+'</option>');
+            var animation = anims[i];
+            var opt = '<option value="' + animation + '">' + animation + '</option>';
+    		$("#animSelector").append(opt);
         }
 
     	setAnim(anims[0]);
@@ -44,7 +53,6 @@ $(function () {
 
     function setAnim(pName) {
     	currentAnim = pName;
-    	//currentSprite[pName].call(currentSprite);
         currentSprite.gotoAndPlay(pName);
     }
 
