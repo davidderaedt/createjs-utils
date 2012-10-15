@@ -5,6 +5,9 @@
 $(function () {
 	'use strict';
 
+    // Change this according to your needs
+    var lib = spriteLib;
+
     var anims = [];
     var currentClass;
     var currentSprite;
@@ -17,7 +20,6 @@ $(function () {
     	stage.update();
     });     
 
-    var lib = myGame;
 
     for (var key in lib) {
     	classList.push(lib[key]);
