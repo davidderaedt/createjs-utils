@@ -1,5 +1,5 @@
 //EaselJS Spritesheet
- if (!window.spriteLib) { window.spriteLib = {}; }
+if (!window.spriteLib) { window.spriteLib = {}; }
 (function(scope) {
 var spritesheetPath='sprites/Sprites.png';
 
