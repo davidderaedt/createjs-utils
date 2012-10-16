@@ -22,6 +22,7 @@ Limits & known issues:
 *	You cannot set the number of columns or rows manually.
 *	You cannot set the next `parameter` from photoshop: all animations are looped by default.
 *	You cannot set a scaling factor (1 pixel in Photoshop will result in 1 pixel in the spritesheet).
+*	Due to what seems to be an issue with the way photoshop handles multiplatform line endings, you may encounter some issues opening the library js file with some editors.
 
 
 Options & notes
