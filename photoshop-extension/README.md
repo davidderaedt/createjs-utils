@@ -1,11 +1,22 @@
 Photoshop to EaselJS SpriteSheets
 =================
 
-A Photoshop script to output EaselJS / CreateJS SpriteSheets.
+Exports a PSD file to a spritesheet for use with EaselJS projects.
 
-Use at your own risk. This is a work in progress of a proof of concept. Things *will* break.
+> While usable as is, this script is intended to be a test script for an upcoming panel based extension.
 
-Use like any Photoshop script: either place the script in the application script folder, or double click on the file JSX file. 
+##Usage
+
+1. Copy the `exportToEaselJS.jssxbin` file along with the corresponding two template `txt` files to the directory of your choice. 
+2. In Photoshop, open a properly formed PSD. Take a look at the `characters.psd` file for a good example.
+3. Choose `File > Scripts > browse` and select the `jsxbin` file
+4. When prompted, choose the output directory of your choice. If you don't have a createJS example in place, take our own `spritelib-tester`.
+
+
+
+
+## More informations
+
 
 The script only processes the current document, not your whole working set, so all sprites should be in the same document.
 
@@ -26,6 +37,7 @@ Limits & known issues:
 
 Options & notes
 
+*	Feel free to edit the template files to adapt it to your needs
 *	When processing, the script will briefly create a temporary file and delete it afterwards. This is expected.
 *	For consistency, the resulting code is intentionally very close to the code exported by FlashPro CS6 Easel spritesheet exporter.
 *	The library name (ie name of the object in the window object containing the sprite classes) is hardcoded at the top of the file, you can change it as you please.
