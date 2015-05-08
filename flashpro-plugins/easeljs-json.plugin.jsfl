@@ -18,7 +18,6 @@ function getPluginInfo(lang)
 	return pluginInfo;
 }
 
-var helperFunctions = null;
 var symbolItem = null;
 var symbolName = null;
 var globalMeta = null;
@@ -27,7 +26,6 @@ var firstSymbol = true;
 
 function initializeVars()
 {
-	helperFunctions = null;
 	symbolItem = null;
 	symbolName = null;
 	frameData = "";
@@ -49,8 +47,6 @@ function DetermineAnimationData()
 		if (cmpName == "control")
 			controlLayer = layers[i];
 	}
-
-	helperFunctions = null;
 
 	if (labelLayer == null)
 		return ""
@@ -82,22 +78,23 @@ function DetermineAnimationData()
 			endFrameNumber = frameNumber + labelFrame.duration - 1;
 			beginFrame = frameNumber;
 			endFrame = endFrameNumber;
-			s += '"'+labelFrame.name + "\":[" + beginFrame + "," + endFrame;
+			if (beginFrame != endFrame) {
+				s += '"'+labelFrame.name + "\":[" + beginFrame + "," + endFrame;
 
-			if (controlFrame != null && controlFrame.name != null && controlFrame.name.length != 0) {				
-				s += ", " + "\"" + controlFrame.name + "\"]";
-			}
-			else {
-				s += ", true]";
+				if (controlFrame != null && controlFrame.name != null && controlFrame.name.length != 0) {				
+					s += ", " + "\"" + controlFrame.name + "\"]";
+				}
+				else {
+					s += ", true]";
+				}
+			} else {
+				s += '"'+labelFrame.name + "\":" + beginFrame;
 			}
 
 
 			frameNumber = endFrameNumber + 1;
 			labelIndex = frameNumber;
 			controlIndex = labelIndex;
-
-			if (!hitSpan)
-				helperFunctions = "";
 
 			hitSpan = true;
 		}
