@@ -1,17 +1,4 @@
-﻿/*Options*/
-
-// The directory where your sheets are stored, relative to your HTML file
-var imageDirectory="sprites/";
-// Whether or not you want to expose animations as functions
-var useHelperFunctions = true;
-// The global object in which to store sprite classes. 
-// e.g. window.myGame.DarkKnight, where DarkKnight is your MovieClip
-var libObjName = "myGame";
-
-/*End of options*/
-
-function getPluginInfo(lang)
-{
+﻿function getPluginInfo(lang){
 	pluginInfo = new Object();
 	pluginInfo.id = "easeljs2";
 	pluginInfo.name = "easeljs2";
@@ -24,18 +11,15 @@ function getPluginInfo(lang)
 	pluginInfo.capabilities.canStackDuplicateFrames = true;
 	return pluginInfo;
 }
-var helperFunctions = null;
+
 var symbolItem = null;
 var symbolName = null;
 var globalMeta = null;
-var frameData = "";
 
-function initializeVars()
-{
-	helperFunctions = null;
+function initializeVars(){
 	symbolItem = null;
 	symbolName = null;
-	frameData = "";
+	allFrames = [];
 }
 
 function DetermineAnimationData()
@@ -54,8 +38,6 @@ function DetermineAnimationData()
 		if (cmpName == "control")
 			controlLayer = layers[i];
 	}
-
-	helperFunctions = null;
 
 	if (labelLayer == null)
 		return ""
@@ -97,15 +79,6 @@ function DetermineAnimationData()
 			labelIndex = frameNumber;
 			controlIndex = labelIndex;
 
-			if (!hitSpan)
-				helperFunctions = "";
-
-			if(useHelperFunctions) {
-				helperFunctions += symbolName + "_p." + labelFrame.name + " = function(){\n";
-				helperFunctions += "\tthis.gotoAndPlay(\""+labelFrame.name+"\");\n";
-				helperFunctions += "}\n";
-			}
-
 			hitSpan = true;
 		}
 	}
@@ -117,11 +90,9 @@ function DetermineAnimationData()
 	return s;
 }
 
-function endSymbol(meta)
-{
+function endSymbol(meta){
 	var s = "";
-	if (symbolItem != null)
-	{
+	if (symbolItem != null){
 		symbolName = symbolName.replace(/\s+/g,"_");
 		
 		var animationData = DetermineAnimationData();
@@ -131,28 +102,31 @@ function endSymbol(meta)
 		s += "\tthis.initialize();\n"
 		s += "}\n";
 
-		s += symbolName + "._SpriteSheet = new createjs.SpriteSheet({images: [spritesheetPath], "
-		if (animationData != null && animationData.length != 0)
-		{
-			s += "frames: [" + frameData + "], ";
-			s += " animations: " + animationData + "});\n";
-		}
-		else
-		{
-			s += "frames: [" + frameData + "]});\n";
-		}
+		var stackedFrames = unique(allFrames);
+		var frameData  = [];
 		
-		s += "var " + proto + " = " + symbolName + ".prototype = new createjs.BitmapAnimation();\n";
-		s += "" + proto + ".BitmapAnimation_initialize = " + proto + ".initialize;\n";
-		s += "" + proto + ".initialize = function() {\n"
-		s += "\tthis.BitmapAnimation_initialize(" + symbolName + "._SpriteSheet);\n";
-		s += "\tthis.paused = false;\n";
-		s += "}\n";
+		for(var i in allFrames) frameData[i]='s['+stackedFrames.indexOf(allFrames[i])+']';
+		
 
-		if (helperFunctions != null)
-			s += helperFunctions;
+		var spriteData = {
+			images:"[spritesheetPath]",
+			frames:frameData
+		};
+
+		if (animationData != null && animationData.length != 0) spriteData.animations = animationData;
+
+		s += symbolName + "._SpriteSheet = new createjs.SpriteSheet("+JSON.stringify(spriteData)+");\n";
 		
-		s += "scope." + symbolName + " = " + symbolName + ";\n";
+
+		// s += "var s = " + JSON.encode(stackedFrames) + ";\n";
+		// s += "var " + proto + " = " + symbolName + ".prototype = new createjs.BitmapAnimation();\n"+
+		// proto + ".BitmapAnimation_initialize = " + proto + ".initialize;\n"+
+		// proto + ".initialize = function() {\n"+
+		// "\tthis.BitmapAnimation_initialize(" + symbolName + "._SpriteSheet);\n"+
+		// "\tthis.paused = false;\n"+
+		// "}\n";
+		
+		s+= "scope." + symbolName + " = " + symbolName + ";\n";
 
 		// cleanup
 		initializeVars();
@@ -160,54 +134,46 @@ function endSymbol(meta)
 	return s;
 }
 
-function beginExport(meta)
-{
+function beginExport(meta){
 	initializeVars();
 	startFrameNumber = 0;
 	globalMeta = meta;
 
-	var str = "if (!window."+libObjName+") { window."+libObjName+" = {}; }\n(function(scope) {\n";
-	str += "var spritesheetPath = \""+imageDirectory+meta.image+"\";\n";	
-
-	return 	str;
+	return 	"(function(window) {\n";
 }
 
-function frameExport(frame)
-{
+function frameExport(frame){
 	var s = "";
-	if (symbolName != frame.symbolName)
-	{
+	if (symbolName != frame.symbolName){
 		s = endSymbol(globalMeta);
-
 		symbolItem = frame.symbol;
 		symbolName = frame.symbolName;
 	}
-	else
-	{
-		frameData += ",";
-	}
 	
-	frameData += "[" + frame.frame.x + "," + frame.frame.y + "," + frame.frame.w + "," + frame.frame.h + ",0,";
-	if (frame.trimmed)
-	{
-		frameData += (frame.registrationPoint.x - frame.offsetInSource.x) + "," + (frame.registrationPoint.y - frame.offsetInSource.y);
+	var allFrames = [frame.frame.x,frame.frame.y,frame.frame.w,frame.frame.h,0];
+	if (frame.trimmed){
+		allFrames = allFrames.concat([frame.registrationPoint.x-frame.offsetInSource.x,frame.registrationPoint.y-frame.offsetInSource.y]);
+	} else {
+		allFrames = allFrames.concat([frame.registrationPoint.x,frame.registrationPoint.y]);
 	}
-	else
-	{
-		frameData += frame.registrationPoint.x + "," + frame.registrationPoint.y;
-	}
-	frameData += "]";
 	
 	return s;
 }
 
-function endExport(meta)
-{
+function endExport(meta){
 	var	s = endSymbol(globalMeta);
 	
 	globalMeta = null;
-	
-	s += "}(window."+libObjName+"));\n\n";
 
-	return s;
+	return s+"}(window));\n\n";
+}
+
+function unique(arr) {
+    var resp = [];
+    for (var i = 0; i < arr.length; i++) {
+        if (resp.indexOf(arr[i]) == -1) {
+            resp.push(arr[i]);
+        }
+    }
+    return resp;
 }
