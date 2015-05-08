@@ -12,6 +12,32 @@
 	return pluginInfo;
 }
 
+var JSON = {
+	stringify  : function stringify(obj) {
+        var t = typeof (obj);
+        if (t != "object" || obj === null) {
+            if (t == "string") obj = '"' + obj + '"';
+            return String(obj);
+        } else {
+            var n, v, json = [], arr = (obj && obj.constructor == Array);
+            for (n in obj) {
+                v = obj[n];
+                t = typeof(v);
+                if (obj.hasOwnProperty(n)) {
+                    if (t == "string") {
+                        v = '"' + v + '"';
+                    } else if (t == "object" && v !== null){
+                        v = JSON.stringify(v);
+                    }
+
+                    json.push((arr ? "" : '"' + n + '":') + String(v));
+                }
+            }
+            return (arr ? "[" : "{") + String(json) + (arr ? "]" : "}");
+        }
+    }
+}
+
 var symbolItem = null;
 var symbolName = null;
 var globalMeta = null;
@@ -22,72 +48,45 @@ function initializeVars(){
 	allFrames = [];
 }
 
-function DetermineAnimationData()
-{
+function DetermineAnimationData(){
 	var	labelLayer = null;
-	var controlLayer = null;
 	var layers = symbolItem.timeline.layers;
 
 	var i;
-	for (i = 0; i < layers.length; i++)
-	{
+	for (i in layers){
 		cmpName = layers[i].name.toLowerCase();
-		if (cmpName == "labels")
-			labelLayer = layers[i];
-
-		if (cmpName == "control")
-			controlLayer = layers[i];
+		if (cmpName == "labels") labelLayer = layers[i];
 	}
 
-	if (labelLayer == null)
-		return ""
+	if (labelLayer == null) return ""
 
 	var labelFrame = null;
 	var controlFrame = null;
 	var labelIndex = 0;
 	var controlIndex = 0;
 	var frameNumber = 0;
-	var hitSpan = false;
 	var endFrameNumber = 0;
 
-	var s = "";
+	var r = {};
 
-	while (labelIndex < labelLayer.frames.length)
-	{
+	while (labelIndex < labelLayer.frames.length){
 		labelFrame = labelLayer.frames[labelIndex++];
-		if (controlLayer)
-			controlFrame = controlLayer.frames[controlIndex++];
 
 		
-		if (labelFrame.name != null)
-		{
-			if (hitSpan)
-				s += ", ";
-			else
-				s += "{";
-
+		if (labelFrame.name != null || labelFrame.name!=''){
 			endFrameNumber = frameNumber + labelFrame.duration - 1;
-			beginFrame = frameNumber;
-			endFrame = endFrameNumber;
-			s += labelFrame.name + ":[" + beginFrame + "," + endFrame;
-			if (controlFrame != null && controlFrame.name != null && controlFrame.name.length != 0)
-				s += ", " + "\"" + controlFrame.name + "\"]";
-			else
-				s += ", true]";
+			if(frameNumber==endFrameNumber){
+				r[labelFrame.name]=[frameNumber,endFrameNumber];
+			} else {
+				r[labelFrame.name]=[frameNumber,endFrameNumber,true];
+			}
 
 			frameNumber = endFrameNumber + 1;
 			labelIndex = frameNumber;
 			controlIndex = labelIndex;
-
-			hitSpan = true;
 		}
 	}
-	
-	if (hitSpan)
-		s += "}";
-
-
-	return s;
+	return r;
 }
 
 function endSymbol(meta){
@@ -96,40 +95,28 @@ function endSymbol(meta){
 		symbolName = symbolName.replace(/\s+/g,"_");
 		
 		var animationData = DetermineAnimationData();
-		var proto = symbolName + "_p";
+		var i;
+		var stackedFrames = [];
+		var frameData = [];
+
+		for(i in allFrames){
+			if (stackedFrames.indexOf(JSON.stringify(allFrames[i])) == -1) {
+				stackedFrames.push(JSON.stringify(allFrames[i]));
+			}
+		}		
 		
-		s += "\nvar "+symbolName + " = function() {\n";
-		s += "\tthis.initialize();\n"
-		s += "}\n";
+		for(i in allFrames) frameData[i]='f['+stackedFrames.indexOf(JSON.stringify(allFrames[i]))+']';
 
-		var stackedFrames = unique(allFrames);
-		var frameData  = [];
-		
-		for(var i in allFrames) frameData[i]='s['+stackedFrames.indexOf(allFrames[i])+']';
-		
+		s += "\n(lib."+symbolName + " = function() {\n\t";
+		s += "var f = ["+stackedFrames.join(",")+"];\n\t";
+		s += 'return new cjs.Sprite(new cjs.SpriteSheet({\n\t\t'+
+			'images:["' + meta.image + '"],\n\t\t'+
+			'frames:['+frameData.join(",")+'],\n\t\t'+
+			'animations:'+JSON.stringify(animationData)+'\n\t'+
+		'}));\n'+
+		'});\n';
 
-		var spriteData = {
-			images:"[spritesheetPath]",
-			frames:frameData
-		};
-
-		if (animationData != null && animationData.length != 0) spriteData.animations = animationData;
-
-		s += symbolName + "._SpriteSheet = new createjs.SpriteSheet("+JSON.stringify(spriteData)+");\n";
-		
-
-		// s += "var s = " + JSON.encode(stackedFrames) + ";\n";
-		// s += "var " + proto + " = " + symbolName + ".prototype = new createjs.BitmapAnimation();\n"+
-		// proto + ".BitmapAnimation_initialize = " + proto + ".initialize;\n"+
-		// proto + ".initialize = function() {\n"+
-		// "\tthis.BitmapAnimation_initialize(" + symbolName + "._SpriteSheet);\n"+
-		// "\tthis.paused = false;\n"+
-		// "}\n";
-		
-		s+= "scope." + symbolName + " = " + symbolName + ";\n";
-
-		// cleanup
-		initializeVars();
+		initializeVars(); // cleanup
 	}
 	return s;
 }
@@ -139,7 +126,8 @@ function beginExport(meta){
 	startFrameNumber = 0;
 	globalMeta = meta;
 
-	return 	"(function(window) {\n";
+
+	return 	"if(!window.lib) window.lib = {};\n(function(lib,cjs) {\n";
 }
 
 function frameExport(frame){
@@ -150,13 +138,14 @@ function frameExport(frame){
 		symbolName = frame.symbolName;
 	}
 	
-	var allFrames = [frame.frame.x,frame.frame.y,frame.frame.w,frame.frame.h,0];
+	r = [frame.frame.x,frame.frame.y,frame.frame.w,frame.frame.h,0];
 	if (frame.trimmed){
-		allFrames = allFrames.concat([frame.registrationPoint.x-frame.offsetInSource.x,frame.registrationPoint.y-frame.offsetInSource.y]);
+		r = r.concat([frame.registrationPoint.x-frame.offsetInSource.x,frame.registrationPoint.y-frame.offsetInSource.y]);
 	} else {
-		allFrames = allFrames.concat([frame.registrationPoint.x,frame.registrationPoint.y]);
+		r = r.concat([frame.registrationPoint.x,frame.registrationPoint.y]);
 	}
-	
+	allFrames.push(r);
+
 	return s;
 }
 
@@ -165,15 +154,15 @@ function endExport(meta){
 	
 	globalMeta = null;
 
-	return s+"}(window));\n\n";
+	return s+"}(window.lib, createjs || {}));\n\n";
 }
 
-function unique(arr) {
-    var resp = [];
-    for (var i = 0; i < arr.length; i++) {
-        if (resp.indexOf(arr[i]) == -1) {
-            resp.push(arr[i]);
-        }
-    }
-    return resp;
+function getUnique(arr){
+	var u = {}, a = [];
+	for(var i = 0, l = arr.length; i < l; ++i){
+		if(u.hasOwnProperty(arr[i])) continue;
+		a.push(arr[i]);
+		u[arr[i]] = 1;
+	}
+	return a;
 }
