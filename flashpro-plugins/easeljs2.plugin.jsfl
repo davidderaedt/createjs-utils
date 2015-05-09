@@ -1,17 +1,4 @@
-﻿/*Options*/
-
-// The directory where your sheets are stored, relative to your HTML file
-var imageDirectory="sprites/";
-// Whether or not you want to expose animations as functions
-var useHelperFunctions = true;
-// The global object in which to store sprite classes. 
-// e.g. window.myGame.DarkKnight, where DarkKnight is your MovieClip
-var libObjName = "myGame";
-
-/*End of options*/
-
-function getPluginInfo(lang)
-{
+﻿function getPluginInfo(lang){
 	pluginInfo = new Object();
 	pluginInfo.id = "easeljs2";
 	pluginInfo.name = "easeljs2";
@@ -24,190 +11,158 @@ function getPluginInfo(lang)
 	pluginInfo.capabilities.canStackDuplicateFrames = true;
 	return pluginInfo;
 }
-var helperFunctions = null;
+
+var JSON = {
+	stringify  : function stringify(obj) {
+        var t = typeof (obj);
+        if (t != "object" || obj === null) {
+            if (t == "string") obj = '"' + obj + '"';
+            return String(obj);
+        } else {
+            var n, v, json = [], arr = (obj && obj.constructor == Array);
+            for (n in obj) {
+                v = obj[n];
+                t = typeof(v);
+                if (obj.hasOwnProperty(n)) {
+                    if (t == "string") {
+                        v = '"' + v + '"';
+                    } else if (t == "object" && v !== null){
+                        v = JSON.stringify(v);
+                    }
+
+                    json.push((arr ? "" : '"' + n + '":') + String(v));
+                }
+            }
+            return (arr ? "[" : "{") + String(json) + (arr ? "]" : "}");
+        }
+    }
+}
+
 var symbolItem = null;
 var symbolName = null;
 var globalMeta = null;
-var frameData = "";
 
-function initializeVars()
-{
-	helperFunctions = null;
+function initializeVars(){
 	symbolItem = null;
 	symbolName = null;
-	frameData = "";
+	allFrames = [];
 }
 
-function DetermineAnimationData()
-{
+function DetermineAnimationData(){
 	var	labelLayer = null;
-	var controlLayer = null;
 	var layers = symbolItem.timeline.layers;
 
 	var i;
-	for (i = 0; i < layers.length; i++)
-	{
+	for (i in layers){
 		cmpName = layers[i].name.toLowerCase();
-		if (cmpName == "labels")
-			labelLayer = layers[i];
-
-		if (cmpName == "control")
-			controlLayer = layers[i];
+		if (cmpName == "labels") labelLayer = layers[i];
 	}
 
-	helperFunctions = null;
-
-	if (labelLayer == null)
-		return ""
+	if (labelLayer == null) return ""
 
 	var labelFrame = null;
 	var controlFrame = null;
 	var labelIndex = 0;
 	var controlIndex = 0;
 	var frameNumber = 0;
-	var hitSpan = false;
 	var endFrameNumber = 0;
 
-	var s = "";
+	var r = {};
 
-	while (labelIndex < labelLayer.frames.length)
-	{
+	while (labelIndex < labelLayer.frames.length){
 		labelFrame = labelLayer.frames[labelIndex++];
-		if (controlLayer)
-			controlFrame = controlLayer.frames[controlIndex++];
 
 		
-		if (labelFrame.name != null)
-		{
-			if (hitSpan)
-				s += ", ";
-			else
-				s += "{";
-
+		if (labelFrame.name != null || labelFrame.name!=''){
 			endFrameNumber = frameNumber + labelFrame.duration - 1;
-			beginFrame = frameNumber;
-			endFrame = endFrameNumber;
-			s += labelFrame.name + ":[" + beginFrame + "," + endFrame;
-			if (controlFrame != null && controlFrame.name != null && controlFrame.name.length != 0)
-				s += ", " + "\"" + controlFrame.name + "\"]";
-			else
-				s += ", true]";
+			if(frameNumber==endFrameNumber){
+				r[labelFrame.name]=[frameNumber,endFrameNumber];
+			} else {
+				r[labelFrame.name]=[frameNumber,endFrameNumber,true];
+			}
 
 			frameNumber = endFrameNumber + 1;
 			labelIndex = frameNumber;
 			controlIndex = labelIndex;
-
-			if (!hitSpan)
-				helperFunctions = "";
-
-			if(useHelperFunctions) {
-				helperFunctions += symbolName + "_p." + labelFrame.name + " = function(){\n";
-				helperFunctions += "\tthis.gotoAndPlay(\""+labelFrame.name+"\");\n";
-				helperFunctions += "}\n";
-			}
-
-			hitSpan = true;
 		}
 	}
-	
-	if (hitSpan)
-		s += "}";
-
-
-	return s;
+	return r;
 }
 
-function endSymbol(meta)
-{
+function endSymbol(meta){
 	var s = "";
-	if (symbolItem != null)
-	{
+	if (symbolItem != null){
 		symbolName = symbolName.replace(/\s+/g,"_");
 		
 		var animationData = DetermineAnimationData();
-		var proto = symbolName + "_p";
-		
-		s += "\nvar "+symbolName + " = function() {\n";
-		s += "\tthis.initialize();\n"
-		s += "}\n";
+		var i;
+		var stackedFrames = [];
+		var frameData = [];
 
-		s += symbolName + "._SpriteSheet = new createjs.SpriteSheet({images: [spritesheetPath], "
-		if (animationData != null && animationData.length != 0)
-		{
-			s += "frames: [" + frameData + "], ";
-			s += " animations: " + animationData + "});\n";
-		}
-		else
-		{
-			s += "frames: [" + frameData + "]});\n";
-		}
+		for(i in allFrames){
+			if (stackedFrames.indexOf(JSON.stringify(allFrames[i])) == -1) {
+				stackedFrames.push(JSON.stringify(allFrames[i]));
+			}
+		}		
 		
-		s += "var " + proto + " = " + symbolName + ".prototype = new createjs.BitmapAnimation();\n";
-		s += "" + proto + ".BitmapAnimation_initialize = " + proto + ".initialize;\n";
-		s += "" + proto + ".initialize = function() {\n"
-		s += "\tthis.BitmapAnimation_initialize(" + symbolName + "._SpriteSheet);\n";
-		s += "\tthis.paused = false;\n";
-		s += "}\n";
+		for(i in allFrames) frameData[i]='f['+stackedFrames.indexOf(JSON.stringify(allFrames[i]))+']';
 
-		if (helperFunctions != null)
-			s += helperFunctions;
-		
-		s += "scope." + symbolName + " = " + symbolName + ";\n";
+		s += "\n(lib."+symbolName + " = function() {\n\t";
+		s += "var f = ["+stackedFrames.join(",")+"];\n\t";
+		s += 'return new cjs.Sprite(new cjs.SpriteSheet({\n\t\t'+
+			'images:["' + meta.image + '"],\n\t\t'+
+			'frames:['+frameData.join(",")+'],\n\t\t'+
+			'animations:'+JSON.stringify(animationData)+'\n\t'+
+		'}));\n'+
+		'});\n';
 
-		// cleanup
-		initializeVars();
+		initializeVars(); // cleanup
 	}
 	return s;
 }
 
-function beginExport(meta)
-{
+function beginExport(meta){
 	initializeVars();
 	startFrameNumber = 0;
 	globalMeta = meta;
 
-	var str = "if (!window."+libObjName+") { window."+libObjName+" = {}; }\n(function(scope) {\n";
-	str += "var spritesheetPath = \""+imageDirectory+meta.image+"\";\n";	
 
-	return 	str;
+	return 	"if(!window.lib) window.lib = {};\n(function(lib,cjs) {\n";
 }
 
-function frameExport(frame)
-{
+function frameExport(frame){
 	var s = "";
-	if (symbolName != frame.symbolName)
-	{
+	if (symbolName != frame.symbolName){
 		s = endSymbol(globalMeta);
-
 		symbolItem = frame.symbol;
 		symbolName = frame.symbolName;
 	}
-	else
-	{
-		frameData += ",";
-	}
 	
-	frameData += "[" + frame.frame.x + "," + frame.frame.y + "," + frame.frame.w + "," + frame.frame.h + ",0,";
-	if (frame.trimmed)
-	{
-		frameData += (frame.registrationPoint.x - frame.offsetInSource.x) + "," + (frame.registrationPoint.y - frame.offsetInSource.y);
+	r = [frame.frame.x,frame.frame.y,frame.frame.w,frame.frame.h,0];
+	if (frame.trimmed){
+		r = r.concat([frame.registrationPoint.x-frame.offsetInSource.x,frame.registrationPoint.y-frame.offsetInSource.y]);
+	} else {
+		r = r.concat([frame.registrationPoint.x,frame.registrationPoint.y]);
 	}
-	else
-	{
-		frameData += frame.registrationPoint.x + "," + frame.registrationPoint.y;
-	}
-	frameData += "]";
-	
+	allFrames.push(r);
+
 	return s;
 }
 
-function endExport(meta)
-{
+function endExport(meta){
 	var	s = endSymbol(globalMeta);
 	
 	globalMeta = null;
-	
-	s += "}(window."+libObjName+"));\n\n";
 
-	return s;
+	return s+"}(window.lib, createjs || {}));\n\n";
+}
+
+function getUnique(arr){
+	var u = {}, a = [];
+	for(var i = 0, l = arr.length; i < l; ++i){
+		if(u.hasOwnProperty(arr[i])) continue;
+		a.push(arr[i]);
+		u[arr[i]] = 1;
+	}
+	return a;
 }

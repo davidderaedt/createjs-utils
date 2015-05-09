@@ -13,3 +13,13 @@ The JSFL file exposes various options at the top of the file, such as the defaul
 
 `easeljs-json` simply exports all data in JSON format rather than in a javascript file.
 
+### ChangeLog : 
+
+(easeljs2.plugin.jsfl)
+
+- Support EaselJS 0.8.0
+- Support Sprite Stack (reduced the .js size file drastically)
+- Change the code [style](https://github.com/airbnb/javascript)
+- Added JSON Stringify for a simpler code.
+- Removed Helper functions (is more reasonable add this by code, it will save a lot space when scalable)
+- Removed control layer
